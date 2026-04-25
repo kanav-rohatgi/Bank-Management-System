@@ -22,7 +22,7 @@ A full-stack Bank Management System project built using Java Spring Boot, MySQL,
 
 ```bash
 git clone https://github.com/kanav-rohatgi/Bank-Management-System.git
-cd bank-management
+cd Bank-Management-System
 docker compose up --build
 ```
 
