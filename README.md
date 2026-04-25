@@ -11,14 +11,6 @@ A full-stack Bank Management System project built using Java Spring Boot, MySQL,
 * Database integration
 * Containerized setup using Docker
 
-## Tech Stack
-
-* Java 21
-* Spring Boot
-* MySQL 8
-* Frontend
-* Docker & Docker Compose
-
 ## Run Locally
 
 ### Prerequisites
