@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Bank Management System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 14px; background: #f0f0f0; color: #222; }
+
+  #header { background: #003366; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 16px; }
+  #header h1 { font-size: 18px; font-weight: bold; }
+  #header span { font-size: 12px; opacity: 0.7; }
+
+  #nav { background: #004080; display: flex; gap: 2px; padding: 0 10px; }
+  #nav button { background: none; border: none; color: #ccc; padding: 10px 18px; cursor: pointer; font-size: 13px; border-bottom: 3px solid transparent; }
+  #nav button:hover { color: white; background: rgba(255,255,255,0.1); }
+  #nav button.active { color: white; border-bottom-color: #ffcc00; }
+
+  #content { padding: 20px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h2 { font-size: 16px; margin-bottom: 14px; color: #003366; border-bottom: 2px solid #003366; padding-bottom: 6px; }
+  h3 { font-size: 14px; margin-bottom: 10px; color: #333; }
+
+  .row { display: flex; gap: 20px; align-items: flex-start; }
+  .box { background: white; border: 1px solid #ccc; padding: 16px; margin-bottom: 16px; }
+  .box.half { flex: 1; }
+
+  label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 12px; color: #444; }
+  input, select { width: 100%; padding: 6px 8px; border: 1px solid #aaa; font-size: 13px; margin-bottom: 10px; }
+  input:focus, select:focus { outline: 2px solid #004080; }
+
+  button { padding: 7px 16px; background: #003366; color: white; border: none; cursor: pointer; font-size: 13px; margin-right: 6px; }
+  button:hover { background: #004080; }
+  button.danger { background: #990000; }
+  button.danger:hover { background: #cc0000; }
+  button.small { padding: 4px 10px; font-size: 12px; }
+  button.secondary { background: #666; }
+  button.secondary:hover { background: #888; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #003366; color: white; padding: 8px 10px; text-align: left; font-weight: normal; }
+  td { padding: 7px 10px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+  tr:hover td { background: #f5f8ff; }
+  tr:nth-child(even) td { background: #fafafa; }
+  tr:nth-child(even):hover td { background: #f5f8ff; }
+
+  .msg { padding: 8px 12px; margin-bottom: 12px; font-size: 13px; }
+  .msg.ok { background: #d4edda; border: 1px solid #28a745; color: #155724; }
+  .msg.err { background: #f8d7da; border: 1px solid #dc3545; color: #721c24; }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 16px; }
+  .stat { background: white; border: 1px solid #ccc; border-left: 4px solid #003366; padding: 12px 16px; flex: 1; }
+  .stat .num { font-size: 24px; font-weight: bold; color: #003366; }
+  .stat .lbl { font-size: 11px; color: #666; margin-top: 2px; }
+
+  .badge { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 2px; }
+  .badge.savings  { background: #cce5ff; color: #004080; }
+  .badge.current  { background: #d4edda; color: #155724; }
+  .badge.fixed    { background: #fff3cd; color: #856404; }
+  .badge.deposit  { background: #d4edda; color: #155724; }
+  .badge.withdrawal { background: #f8d7da; color: #721c24; }
+  .badge.transfer { background: #e2e3e5; color: #383d41; }
+
+  .empty { text-align: center; color: #999; padding: 20px; font-style: italic; }
+  #flash { position: fixed; top: 10px; right: 10px; z-index: 999; min-width: 250px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🏦 Bank Management System</h1>
+  <span>Admin Portal</span>
+</div>
+
+<div id="nav">
+  <button onclick="goto('dashboard')" id="nav-dashboard" class="active">Dashboard</button>
+  <button onclick="goto('customers')" id="nav-customers">Customers</button>
+  <button onclick="goto('branches')"  id="nav-branches">Branches</button>
+  <button onclick="goto('accounts')"  id="nav-accounts">Accounts</button>
+  <button onclick="goto('transactions')" id="nav-transactions">Transactions</button>
+</div>
+
+<div id="flash"></div>
+
+<div id="content">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="page active" id="page-dashboard">
+    <h2>Dashboard</h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="d-customers">-</div><div class="lbl">Total Customers</div></div>
+      <div class="stat"><div class="num" id="d-branches">-</div><div class="lbl">Total Branches</div></div>
+      <div class="stat"><div class="num" id="d-accounts">-</div><div class="lbl">Total Accounts</div></div>
+      <div class="stat"><div class="num" id="d-transactions">-</div><div class="lbl">Total Transactions</div></div>
+    </div>
+    <div class="box">
+      <h3>Recent Transactions</h3>
+      <table>
+        <thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Amount (₹)</th><th>Account No</th></tr></thead>
+        <tbody id="d-tx-tbody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== CUSTOMERS ===== -->
+  <div class="page" id="page-customers">
+    <h2>Customers</h2>
+    <div class="row">
+      <div class="box half">
+        <h3 id="cust-form-title">Add Customer</h3>
+        <div id="cust-msg"></div>
+        <input type="hidden" id="cust-id"/>
+        <label>Full Name</label>
+        <input id="cust-name" placeholder="e.g. Rahul Sharma"/>
+        <label>Phone</label>
+        <input id="cust-phone" placeholder="e.g. 9876543210"/>
+        <label>Address</label>
+        <input id="cust-addr" placeholder="e.g. 12 MG Road, Delhi"/>
+        <button onclick="saveCustomer()">Save</button>
+        <button class="secondary" onclick="resetCustForm()">Clear</button>
+      </div>
+      <div class="box half">
+        <h3>Customer List</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Actions</th></tr></thead>
+          <tbody id="cust-tbody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BRANCHES ===== -->
+  <div class="page" id="page-branches">
+    <h2>Branches</h2>
+    <div class="row">
+      <div class="box half">
+        <h3 id="branch-form-title">Add Branch</h3>
+        <div id="branch-msg"></div>
+        <input type="hidden" id="branch-id"/>
+        <label>Branch Name</label>
+        <input id="branch-name" placeholder="e.g. Connaught Place Branch"/>
+        <button onclick="saveBranch()">Save</button>
+        <button class="secondary" onclick="resetBranchForm()">Clear</button>
+      </div>
+      <div class="box half">
+        <h3>Branch List</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Branch Name</th><th>Actions</th></tr></thead>
+          <tbody id="branch-tbody"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ACCOUNTS ===== -->
+  <div class="page" id="page-accounts">
+    <h2>Accounts</h2>
+    <div class="row">
+      <div class="box half">
+        <h3 id="acc-form-title">Open Account</h3>
+        <div id="acc-msg"></div>
+        <input type="hidden" id="acc-id"/>
+        <label>Account Type</label>
+        <select id="acc-type">
+          <option value="SAVINGS">Savings</option>
+          <option value="CURRENT">Current</option>
+          <option value="FIXED_DEPOSIT">Fixed Deposit</option>
+        </select>
+        <label>Opening Balance (₹)</label>
+        <input id="acc-bal" type="number" placeholder="e.g. 5000" min="0"/>
+        <label>Customer</label>
+        <select id="acc-cust"><option value="">-- select --</option></select>
+        <label>Branch</label>
+        <select id="acc-branch"><option value="">-- select --</option></select>
+        <button onclick="saveAccount()">Save</button>
+        <button class="secondary" onclick="resetAccForm()">Clear</button>
+      </div>
+      <div class="box half">
+        <h3>Account List</h3>
+        <table>
+          <thead><tr><th>Acct No</th><th>Type</th><th>Balance</th><th>Customer</th><th>Branch</th><th>Actions</th></tr></thead>
+          <tbody id="acc-tbody"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TRANSACTIONS ===== -->
+  <div class="page" id="page-transactions">
+    <h2>Transactions</h2>
+    <div class="row">
+      <div class="box half">
+        <h3>New Transaction</h3>
+        <div id="tx-msg"></div>
+        <label>Account No</label>
+        <select id="tx-acc"><option value="">-- select account --</option></select>
+        <div id="tx-bal-info" style="font-size:12px;color:#666;margin-top:-6px;margin-bottom:10px;"></div>
+        <label>Type</label>
+        <select id="tx-type" onchange="updateTxPreview()">
+          <option value="DEPOSIT">Deposit</option>
+          <option value="WITHDRAWAL">Withdrawal</option>
+          <option value="TRANSFER">Transfer</option>
+        </select>
+        <label>Amount (₹)</label>
+        <input id="tx-amount" type="number" placeholder="e.g. 1000" min="1" oninput="updateTxPreview()"/>
+        <div id="tx-preview" style="background:#f5f5f5;border:1px solid #ccc;padding:8px;margin-bottom:10px;font-size:12px;display:none;">
+          Balance after: <strong id="tx-preview-val"></strong>
+        </div>
+        <button onclick="saveTransaction()">Submit</button>
+        <button class="secondary" onclick="resetTxForm()">Clear</button>
+      </div>
+      <div class="box half">
+        <h3>Transaction History</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Amount (₹)</th><th>Acct No</th><th>Del</th></tr></thead>
+          <tbody id="tx-tbody"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+const API = '/api';
+
+// ─── cache ───────────────────────────────────────────────
+let cache = { customers: [], branches: [], accounts: [], transactions: [] };
+
+// ─── fetch helpers ───────────────────────────────────────
+async function get(path) {
+  const r = await fetch(API + path);
+  return r.ok ? r.json() : [];
+}
+async function post(path, body) {
+  const r = await fetch(API + path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return { ok: r.ok, text: await r.text() };
+}
+async function put(path, body) {
+  const r = await fetch(API + path, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return { ok: r.ok, text: await r.text() };
+}
+async function del(path) {
+  const r = await fetch(API + path, { method: 'DELETE' });
+  return { ok: r.ok, text: await r.text() };
+}
+
+// ─── flash ───────────────────────────────────────────────
+function flash(msg, ok = true) {
+  const d = document.getElementById('flash');
+  d.innerHTML = `<div class="msg ${ok ? 'ok' : 'err'}">${msg}</div>`;
+  setTimeout(() => d.innerHTML = '', 3000);
+}
+function setMsg(id, msg, ok = true) {
+  document.getElementById(id).innerHTML = msg ? `<div class="msg ${ok ? 'ok' : 'err'}">${msg}</div>` : '';
+}
+
+// ─── navigation ──────────────────────────────────────────
+const pages = ['dashboard', 'customers', 'branches', 'accounts', 'transactions'];
+function goto(name) {
+  pages.forEach(p => {
+    document.getElementById('page-' + p).classList.toggle('active', p === name);
+    document.getElementById('nav-' + p).classList.toggle('active', p === name);
+  });
+  if (name === 'dashboard')    loadDashboard();
+  if (name === 'customers')    loadCustomers();
+  if (name === 'branches')     loadBranches();
+  if (name === 'accounts')     loadAccounts();
+  if (name === 'transactions') loadTransactions();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────
+async function loadDashboard() {
+  const [c, b, a, t] = await Promise.all([
+    get('/customers'), get('/branches'), get('/accounts'), get('/transactions')
+  ]);
+  cache = { customers: c, branches: b, accounts: a, transactions: t };
+  document.getElementById('d-customers').textContent = c.length;
+  document.getElementById('d-branches').textContent  = b.length;
+  document.getElementById('d-accounts').textContent  = a.length;
+  document.getElementById('d-transactions').textContent = t.length;
+
+  const recent = [...t].reverse().slice(0, 10);
+  document.getElementById('d-tx-tbody').innerHTML = recent.length
+    ? recent.map(tx => `<tr>
+        <td>${tx.transactionId}</td>
+        <td>${tx.date || '-'}</td>
+        <td><span class="badge ${tx.type.toLowerCase()}">${tx.type}</span></td>
+        <td>₹${parseFloat(tx.amount).toLocaleString('en-IN')}</td>
+        <td>${tx.accountNo}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No transactions yet</td></tr>';
+}
+
+// ─── CUSTOMERS ───────────────────────────────────────────
+async function loadCustomers() {
+  const data = await get('/customers');
+  cache.customers = data;
+  document.getElementById('cust-tbody').innerHTML = data.length
+    ? data.map(c => `<tr>
+        <td>${c.customerId}</td>
+        <td>${c.name}</td>
+        <td>${c.phone || '-'}</td>
+        <td>${c.address || '-'}</td>
+        <td>
+          <button class="small" onclick="editCustomer(${c.customerId})">Edit</button>
+          <button class="small danger" onclick="deleteCustomer(${c.customerId}, '${esc(c.name)}')">Del</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No customers</td></tr>';
+}
+function editCustomer(id) {
+  const c = cache.customers.find(x => x.customerId === id);
+  if (!c) return;
+  document.getElementById('cust-id').value    = c.customerId;
+  document.getElementById('cust-name').value  = c.name;
+  document.getElementById('cust-phone').value = c.phone || '';
+  document.getElementById('cust-addr').value  = c.address || '';
+  document.getElementById('cust-form-title').textContent = 'Edit Customer #' + id;
+  setMsg('cust-msg', '');
+}
+function resetCustForm() {
+  document.getElementById('cust-id').value    = '';
+  document.getElementById('cust-name').value  = '';
+  document.getElementById('cust-phone').value = '';
+  document.getElementById('cust-addr').value  = '';
+  document.getElementById('cust-form-title').textContent = 'Add Customer';
+  setMsg('cust-msg', '');
+}
+async function saveCustomer() {
+  const id   = document.getElementById('cust-id').value;
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name) { setMsg('cust-msg', 'Name is required', false); return; }
+  const body = { name, phone: document.getElementById('cust-phone').value, address: document.getElementById('cust-addr').value };
+  const r = id ? await put('/customers/' + id, body) : await post('/customers', body);
+  if (r.ok) { flash(id ? 'Customer updated' : 'Customer added'); resetCustForm(); loadCustomers(); }
+  else       setMsg('cust-msg', r.text, false);
+}
+async function deleteCustomer(id, name) {
+  if (!confirm('Delete customer "' + name + '"? Linked accounts will also be deleted.')) return;
+  const r = await del('/customers/' + id);
+  r.ok ? flash('Customer deleted') : flash(r.text, false);
+  loadCustomers();
+}
+
+// ─── BRANCHES ────────────────────────────────────────────
+async function loadBranches() {
+  const data = await get('/branches');
+  cache.branches = data;
+  document.getElementById('branch-tbody').innerHTML = data.length
+    ? data.map(b => `<tr>
+        <td>${b.branchId}</td>
+        <td>${b.branchName}</td>
+        <td>
+          <button class="small" onclick="editBranch(${b.branchId})">Edit</button>
+          <button class="small danger" onclick="deleteBranch(${b.branchId}, '${esc(b.branchName)}')">Del</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="3" class="empty">No branches</td></tr>';
+}
+function editBranch(id) {
+  const b = cache.branches.find(x => x.branchId === id);
+  if (!b) return;
+  document.getElementById('branch-id').value   = b.branchId;
+  document.getElementById('branch-name').value = b.branchName;
+  document.getElementById('branch-form-title').textContent = 'Edit Branch #' + id;
+  setMsg('branch-msg', '');
+}
+function resetBranchForm() {
+  document.getElementById('branch-id').value   = '';
+  document.getElementById('branch-name').value = '';
+  document.getElementById('branch-form-title').textContent = 'Add Branch';
+  setMsg('branch-msg', '');
+}
+async function saveBranch() {
+  const id   = document.getElementById('branch-id').value;
+  const name = document.getElementById('branch-name').value.trim();
+  if (!name) { setMsg('branch-msg', 'Branch name is required', false); return; }
+  const body = { branchName: name };
+  const r = id ? await put('/branches/' + id, body) : await post('/branches', body);
+  if (r.ok) { flash(id ? 'Branch updated' : 'Branch added'); resetBranchForm(); loadBranches(); }
+  else       setMsg('branch-msg', r.text, false);
+}
+async function deleteBranch(id, name) {
+  if (!confirm('Delete branch "' + name + '"?')) return;
+  const r = await del('/branches/' + id);
+  r.ok ? flash('Branch deleted') : flash(r.text, false);
+  loadBranches();
+}
+
+// ─── ACCOUNTS ────────────────────────────────────────────
+async function loadAccounts() {
+  const [accounts, customers, branches] = await Promise.all([
+    get('/accounts'), get('/customers'), get('/branches')
+  ]);
+  cache.accounts  = accounts;
+  cache.customers = customers;
+  cache.branches  = branches;
+
+  // populate selects
+  document.getElementById('acc-cust').innerHTML =
+    '<option value="">-- select --</option>' +
+    customers.map(c => `<option value="${c.customerId}">${c.name}</option>`).join('');
+  document.getElementById('acc-branch').innerHTML =
+    '<option value="">-- select --</option>' +
+    branches.map(b => `<option value="${b.branchId}">${b.branchName}</option>`).join('');
+
+  document.getElementById('acc-tbody').innerHTML = accounts.length
+    ? accounts.map(a => {
+        const cname = (customers.find(c => c.customerId === a.customerId) || {}).name || a.customerId;
+        const bname = (branches.find(b => b.branchId   === a.branchId)   || {}).branchName || a.branchId;
+        const type  = a.accountType.toLowerCase().replace('_deposit','');
+        return `<tr>
+          <td>${a.accountNo}</td>
+          <td><span class="badge ${type}">${a.accountType}</span></td>
+          <td>₹${parseFloat(a.balance).toLocaleString('en-IN')}</td>
+          <td>${cname}</td>
+          <td>${bname}</td>
+          <td>
+            <button class="small" onclick="editAccount(${a.accountNo})">Edit</button>
+            <button class="small danger" onclick="deleteAccount(${a.accountNo})">Del</button>
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" class="empty">No accounts</td></tr>';
+}
+function editAccount(id) {
+  const a = cache.accounts.find(x => x.accountNo === id);
+  if (!a) return;
+  document.getElementById('acc-id').value    = a.accountNo;
+  document.getElementById('acc-type').value  = a.accountType;
+  document.getElementById('acc-bal').value   = a.balance;
+  document.getElementById('acc-cust').value  = a.customerId;
+  document.getElementById('acc-branch').value = a.branchId;
+  document.getElementById('acc-form-title').textContent = 'Edit Account #' + id;
+  setMsg('acc-msg', '');
+}
+function resetAccForm() {
+  document.getElementById('acc-id').value     = '';
+  document.getElementById('acc-type').value   = 'SAVINGS';
+  document.getElementById('acc-bal').value    = '';
+  document.getElementById('acc-cust').value   = '';
+  document.getElementById('acc-branch').value = '';
+  document.getElementById('acc-form-title').textContent = 'Open Account';
+  setMsg('acc-msg', '');
+}
+async function saveAccount() {
+  const id   = document.getElementById('acc-id').value;
+  const cust = document.getElementById('acc-cust').value;
+  const br   = document.getElementById('acc-branch').value;
+  if (!cust || !br) { setMsg('acc-msg', 'Select customer and branch', false); return; }
+  const body = {
+    accountType: document.getElementById('acc-type').value,
+    balance:     parseFloat(document.getElementById('acc-bal').value) || 0,
+    customerId:  parseInt(cust),
+    branchId:    parseInt(br)
+  };
+  const r = id ? await put('/accounts/' + id, body) : await post('/accounts', body);
+  if (r.ok) { flash(id ? 'Account updated' : 'Account opened'); resetAccForm(); loadAccounts(); }
+  else       setMsg('acc-msg', r.text, false);
+}
+async function deleteAccount(id) {
+  if (!confirm('Delete account #' + id + '? All transactions will be removed.')) return;
+  const r = await del('/accounts/' + id);
+  r.ok ? flash('Account deleted') : flash(r.text, false);
+  loadAccounts();
+}
+
+// ─── TRANSACTIONS ─────────────────────────────────────────
+async function loadTransactions() {
+  const [txs, accounts] = await Promise.all([get('/transactions'), get('/accounts')]);
+  cache.transactions = txs;
+  cache.accounts     = accounts;
+
+  document.getElementById('tx-acc').innerHTML =
+    '<option value="">-- select account --</option>' +
+    accounts.map(a => `<option value="${a.accountNo}" data-bal="${a.balance}">
+      Acct #${a.accountNo} — ${a.accountType} — ₹${parseFloat(a.balance).toLocaleString('en-IN')}
+    </option>`).join('');
+
+  document.getElementById('tx-tbody').innerHTML = txs.length
+    ? [...txs].reverse().map(t => `<tr>
+        <td>${t.transactionId}</td>
+        <td>${t.date || '-'}</td>
+        <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+        <td>₹${parseFloat(t.amount).toLocaleString('en-IN')}</td>
+        <td>${t.accountNo}</td>
+        <td><button class="small danger" onclick="deleteTransaction(${t.transactionId})">Del</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No transactions</td></tr>';
+}
+
+document.getElementById('tx-acc').addEventListener('change', function() {
+  const opt = this.options[this.selectedIndex];
+  const bal = opt && opt.dataset.bal ? parseFloat(opt.dataset.bal) : null;
+  document.getElementById('tx-bal-info').textContent =
+    bal !== null ? 'Current balance: ₹' + bal.toLocaleString('en-IN') : '';
+  updateTxPreview();
+});
+
+function updateTxPreview() {
+  const sel  = document.getElementById('tx-acc');
+  const opt  = sel.options[sel.selectedIndex];
+  const bal  = opt && opt.dataset.bal ? parseFloat(opt.dataset.bal) : null;
+  const amt  = parseFloat(document.getElementById('tx-amount').value) || 0;
+  const type = document.getElementById('tx-type').value;
+  const prev = document.getElementById('tx-preview');
+  if (bal !== null && amt > 0) {
+    const after = type === 'DEPOSIT' ? bal + amt : bal - amt;
+    document.getElementById('tx-preview-val').textContent = '₹' + after.toLocaleString('en-IN');
+    document.getElementById('tx-preview-val').style.color = after < 0 ? 'red' : 'green';
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+function resetTxForm() {
+  document.getElementById('tx-acc').value    = '';
+  document.getElementById('tx-type').value   = 'DEPOSIT';
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-bal-info').textContent = '';
+  document.getElementById('tx-preview').style.display = 'none';
+  setMsg('tx-msg', '');
+}
+async function saveTransaction() {
+  const accNo = document.getElementById('tx-acc').value;
+  const amt   = parseFloat(document.getElementById('tx-amount').value);
+  if (!accNo)      { setMsg('tx-msg', 'Select an account', false); return; }
+  if (!amt || amt <= 0) { setMsg('tx-msg', 'Enter a valid amount', false); return; }
+  const body = {
+    accountNo: parseInt(accNo),
+    type:      document.getElementById('tx-type').value,
+    amount:    amt,
+    date:      new Date().toISOString().slice(0, 10)
+  };
+  const r = await post('/transactions', body);
+  if (r.ok) { flash('Transaction recorded'); resetTxForm(); loadTransactions(); }
+  else       setMsg('tx-msg', r.text, false);
+}
+async function deleteTransaction(id) {
+  if (!confirm('Delete transaction #' + id + '?')) return;
+  const r = await del('/transactions/' + id);
+  r.ok ? flash('Transaction deleted') : flash(r.text, false);
+  loadTransactions();
+}
+
+// ─── util ────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+
+// ─── init ────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
