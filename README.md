@@ -38,6 +38,7 @@ Check docker-compose.yml for username/password.
 
 ## Author
 
-Kanav Rohatgi (1024030242)
-Aditya Kochar ()
-Jaswin 
+* Kanav Rohatgi (1024030242)
+* Aditya Kochhar (1024030246)
+* Jaswin Kaur (1024030241)
+
