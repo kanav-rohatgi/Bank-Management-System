@@ -1,58 +1,51 @@
-# Bank Management System — Spring Boot + MySQL (Docker)
+# Bank Management System
 
-## Stack
-- Spring Boot 3.2 (no JPA — raw SQL via JdbcTemplate)
-- MySQL 8 (Docker)
-- Java 17
+A full-stack Bank Management System project built using Java Spring Boot, MySQL, frontend.
 
-## Run
+## Features
+
+* Customer account creation
+* View customer details
+* Deposit / Withdraw
+* Account management
+* Database integration
+* Containerized setup using Docker
+
+## Tech Stack
+
+* Java 21
+* Spring Boot
+* MySQL 8
+* Frontend
+* Docker & Docker Compose
+
+## Run Locally
+
+### Prerequisites
+
+* Docker installed
+* Docker Compose installed
+
+### Steps
+
 ```bash
-docker-compose up --build
+git clone https://github.com/kanav-rohatgi/Bank-Management-System.git
+cd bank-management
+docker compose up --build
 ```
-App starts at http://localhost:8080
 
----
+## Access Application
 
-## API Reference
+* Frontend: http://localhost
+* Backend API: http://localhost:8080
+* MySQL: localhost:3307
 
-### Customers  `/customers`
-| Method | URL | Body |
-|--------|-----|------|
-| GET | /customers | — |
-| GET | /customers/{id} | — |
-| POST | /customers | `{"name":"","address":"","phone":""}` |
-| PUT | /customers/{id} | `{"name":"","address":"","phone":""}` |
-| DELETE | /customers/{id} | — |
+## Database Credentials
 
-### Branches  `/branches`
-| Method | URL | Body |
-|--------|-----|------|
-| GET | /branches | — |
-| GET | /branches/{id} | — |
-| POST | /branches | `{"branchName":""}` |
-| PUT | /branches/{id} | `{"branchName":""}` |
-| DELETE | /branches/{id} | — |
+Check docker-compose.yml for username/password.
 
-### Accounts  `/accounts`
-| Method | URL | Body |
-|--------|-----|------|
-| GET | /accounts | — |
-| GET | /accounts/{id} | — |
-| GET | /accounts/customer/{customerId} | — |
-| POST | /accounts | `{"accountType":"SAVINGS","balance":0,"customerId":1,"branchId":1}` |
-| PUT | /accounts/{id} | `{"accountType":"","balance":0,"customerId":1,"branchId":1}` |
-| DELETE | /accounts/{id} | — |
+## Author
 
-### Transactions  `/transactions`
-| Method | URL | Body |
-|--------|-----|------|
-| GET | /transactions | — |
-| GET | /transactions/{id} | — |
-| GET | /transactions/account/{accountNo} | — |
-| POST | /transactions | `{"amount":500,"type":"DEPOSIT","accountNo":1}` |
-| PUT | /transactions/{id} | `{"date":"2024-01-01","amount":100,"type":"WITHDRAWAL","accountNo":1}` |
-| DELETE | /transactions/{id} | — |
-
-### Transaction types: `DEPOSIT`, `WITHDRAWAL`, `TRANSFER`
-- DEPOSIT → balance increases automatically
-- WITHDRAWAL → balance decreases (fails if insufficient funds)
+Kanav Rohatgi (1024030242)
+Aditya Kochar ()
+Jaswin 
